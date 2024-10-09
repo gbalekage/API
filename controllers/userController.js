@@ -2,6 +2,8 @@ const HttpError = require("../models/errorModel");
 const User = require("../models/userModel");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
+const fs = require("fs");
+const path = require("path");
 
 const registerUser = async (req, res, next) => {
   try {
@@ -94,11 +96,22 @@ const getUser = async (req, res, next) => {
 };
 
 const getAuthors = async (req, res, next) => {
-  res.json("Get all users");
+  try {
+    const authors = await User.find().select("-password");
+    res.json(authors);
+  } catch (error) {
+    return next(new HttpError(error));
+  }
 };
 
 const changeUserAvatar = async (req, res, next) => {
-  res.json("Change User avatar");
+  try {
+    if (!req.files.avatar) {
+      return next(new HttpError("Please choose an image", 422));
+    }
+  } catch (error) {
+    return next(new HttpError(error));
+  }
 };
 
 const editUser = async (req, res, next) => {
