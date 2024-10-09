@@ -1,6 +1,7 @@
 const HttpError = require("../models/errorModel");
 const User = require("../models/userModel");
 const bcrypt = require("bcryptjs");
+const jwt = require("jsonwebtoken");
 
 const registerUser = async (req, res, next) => {
   try {
@@ -50,7 +51,32 @@ const registerUser = async (req, res, next) => {
 };
 
 const loginUser = async (req, res, next) => {
-  res.json("Login new User");
+  try {
+    const { username, password } = req.body;
+    if (!username || !password) {
+      return next(new HttpError("fill in all fields", 422));
+    }
+
+    const newUsername = username.toLowerCase();
+
+    const user = await User.findOne({ username: newUsername });
+    if (!user) {
+      return next(new HttpError("Invalid credentials", 422));
+    }
+
+    const Pass = await bcrypt.compare(password, user.password);
+    if (!Pass) {
+      return next(new HttpError("Incorect password", 422));
+    }
+
+    const { _id: id, name } = user;
+    const token = jwt.sign({ id, name }, process.env.JWT_SECRET, {
+      expiresIn: "1d",
+    });
+    res.status(200).json({ token, id, name });
+  } catch (error) {
+    return next(new HttpError(error));
+  }
 };
 
 const getUser = async (req, res, next) => {
